@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'apps.users',
+    'rest_framework'
 ]
 
 MIDDLEWARE = [
@@ -171,6 +172,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 # 日志配置
 LOGGING = {
     'version': 1,
@@ -211,4 +213,9 @@ LOGGING = {
             'level': 'INFO',  # 日志器接收的最低日志级别
         },
     }
+}
+
+# 所有接口验证token
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": ['utils.auth.JwtQueryParamsAuthentication', ]
 }
