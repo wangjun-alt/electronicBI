@@ -26,8 +26,6 @@ SECRET_KEY = 'django-insecure-4sne6vq9o)q$c0u7mx0vcx%0p)@#wn^)xwnmsi_n$6llb&)6va
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -39,6 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'apps.users',
+    'apps.dataset',
+    'apps.contracts',
     'rest_framework'
 ]
 
@@ -200,7 +200,7 @@ LOGGING = {
         'file': {  # 向文件中输出日志
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(os.path.dirname(BASE_DIR), "electronicBI/logs/electronicBI.log"),  # 日志文件的位置
+            'filename': os.path.join(os.path.dirname(BASE_DIR), "pycharm_project_2/logs/electronicBI.log"),  # 日志文件的位置
             'maxBytes': 300 * 1024 * 1024,
             'backupCount': 10,
             'formatter': 'verbose'

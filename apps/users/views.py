@@ -7,10 +7,8 @@ from rest_framework.views import APIView
 from utils.auth import CreateToken
 from apps.users.models import User
 
-
 class LoginView(APIView):
     authentication_classes = []
-
     def post(self, request):
         # 1、接收数据
         data = json.loads(request.body.decode())

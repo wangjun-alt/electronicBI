@@ -34,6 +34,6 @@ class CreateToken:
             'alg': 'HS256'
         }
         # 构造payload
-        self.payload['exp'] = datetime.datetime.utcnow() + datetime.timedelta(minutes=100)
+        self.payload['exp'] = datetime.datetime.utcnow() + datetime.timedelta(minutes=2000)
         token = jwt.encode(payload=self.payload, key=salt, algorithm='HS256', headers=headers)
         return token

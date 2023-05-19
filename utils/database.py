@@ -1,4 +1,4 @@
-from pyspark import SparkConf
+from pyspark import SparkConf, HiveContext
 from pyspark.sql import SparkSession
 import traceback
 
