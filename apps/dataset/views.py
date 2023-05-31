@@ -144,28 +144,41 @@ class GetColumnsView(APIView):
         try:
             dimension_data = DataModel.objects.filter(table_name=table_name, data_type=True).values()
             index_data = DataModel.objects.filter(table_name=table_name, data_type=False).values()
+            dimension_li = []
+            index_li = []
             dimension = []
             index = []
-            for ditem in dimension_data:
+            for d in dimension_data:
+                if d['field_name'] not in dimension_li:
+                    dimension_li.append(d['field_name'])
+            for i in index_data:
+                if i['field_name'] not in index_li:
+                    index_li.append(i['field_name'])
+            for ditem in dimension_li:
                 dimension.append(
-                    {'value': ditem['field_name']}
+                    {
+                        'value': ditem
+                    }
                 )
-            for iitem in index_data:
+            for iitem in index_li:
                 index.append(
-                    {'value': iitem['field_name']}
+                    {'value': iitem}
                 )
             response = JsonResponse({'code': 200, 'errmsg': 'ok', 'coordinate_data':{'dimension': dimension, 'index':index }})
-            print(response)
             return response
         except Exception:
             return JsonResponse({'code': 400, 'errmsg': '数据集数据获取失败'})
 
-
+"""avagelist, maxlist, minlist, sumlist"""
 class GetHeaderView(APIView):
     def post(self, request):
         data = json.loads(request.body.decode())
         table_header = data.get('header')
         table_name = data.get('table_name')
+        avageli = data.get('avagelist')
+        maxli = data.get('maxlist')
+        minli = data.get('minlist')
+        sumli = data.get('sumlist')
         table_columns = ",".join(table_header)
         if len(table_header) > 0:
             columns = []
@@ -176,6 +189,22 @@ class GetHeaderView(APIView):
                 },)
             df = spark.sql('select %s from ods.%s' % (table_columns, table_name))
             pd = df.toPandas()
+            if len(avageli) > 0:
+                for avage in avageli:
+                    avage_i = pd[avage].mean()
+                    pd[avage] = avage_i
+            if len(maxli) > 0:
+                for max in maxli:
+                    max_i = pd[max].var()
+                    pd[max] = max_i
+            if len(minli)>0:
+                for min in minli:
+                    min_i = pd[min].std()
+                    pd[min] = min_i
+            if len(sumli) > 0:
+                for sum in sumli:
+                    sum_i = pd[sum].sum()
+                    pd[sum] = sum_i
             resjson = pd.to_json(orient='records', force_ascii=False)
             response = JsonResponse({'code': 200, 'errmsg': 'ok', 'columns': columns, 'table_data': json.loads(resjson)})
             return response
@@ -189,6 +218,10 @@ class SetBarDataView(APIView):
         bardim = data.get('bardim')
         index_list = data.get('index_list')
         table_name = data.get('table_name')
+        avageli = data.get('avagelist')
+        maxli = data.get('maxlist')
+        minli = data.get('minlist')
+        sumli = data.get('sumlist')
         if not bardim or not index_list or not table_name:
             return JsonResponse({'code': 400, 'errmsg': '请检查是否选择维度和指标及横轴字段','bardim_list': [], 'bar_data': []})
         table_index = ",".join(index_list)
@@ -201,11 +234,26 @@ class SetBarDataView(APIView):
             for item_dim in res_dim:
                 bardim_list.append(item_dim[0])
             df_index = spark.sql('select %s from ods.%s' % (table_index, table_name))
-            pd_index = df_index.toPandas()
-            print(bardim_list)
+            pd = df_index.toPandas()
+            if len(avageli) > 0:
+                for avage in avageli:
+                    avage_i = pd[avage].mean()
+                    pd[avage] = avage_i
+            if len(maxli) > 0:
+                for max in maxli:
+                    max_i = pd[max].var()
+                    pd[max] = max_i
+            if len(minli)>0:
+                for min in minli:
+                    min_i = pd[min].std()
+                    pd[min] = min_i
+            if len(sumli) > 0:
+                for sum in sumli:
+                    sum_i = pd[sum].sum()
+                    pd[sum] = sum_i
             for i in range(len(index_list)):
                 index_data = []
-                for item_index in pd_index.values:
+                for item_index in pd.values:
                     index_data.append(item_index[i])
                 bar_data.append({
                     'index_name': index_list[i],
