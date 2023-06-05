@@ -1,7 +1,14 @@
 import json
+import requests
 from django.http import JsonResponse
+from django.http.response import HttpResponse
 from rest_framework.views import APIView
 from utils.database import DataSource
+from hdfs.client import Client
+import os
+import io
+import base64
+from PIL import Image
 
 spark = DataSource()
 
@@ -102,6 +109,77 @@ class GetTableDataView(APIView):
 
 class UploadContractView(APIView):
     def post(self, request):
-        file = request.FILES.get('file')
-        print(file)
+        result = request.user
+        username = result.get('username')
+        dir = "/image/"+username+"/"
+        obj = request.FILES.get('file')
+        f = open(os.path.join('File', obj.name), 'wb+')
+        for line in obj.chunks():
+            f.write(line)
+        f.close()
+        # 获取本地文件路径 文件名 文件路径拼接
+        localpath = os.path.join('/tmp/pycharm_project_2/File/', obj.name)
+        # 定义hdfs文件路径
+        hadoop_path = os.path.join(dir, obj.name)
+        # 开始上传
+        fs = Client("http://127.0.0.1:9870/")
+        dirs = fs.list(hdfs_path="/image/")
+        if username not in dirs:
+            fs.makedirs(hdfs_path=dir, permission="777")
+        fs.upload(hdfs_path=hadoop_path, local_path=localpath, cleanup=True, overwrite=True)
+        os.remove(localpath)
         return JsonResponse({'code': 200, 'errmsg': 'ok'})
+
+class GetContractView(APIView):
+    def post(self, request):
+        result = request.user
+        username = result.get('username')
+        data = json.loads(request.body.decode())
+        file_name = data.get("name")
+        dir = "/image/"+username+"/"
+        fs = Client("http://127.0.0.1:9870/")
+        # 定义hdfs文件路径
+        hdfs_path = os.path.join(dir, file_name)
+        path = "/tmp/pycharm_project_2/File/" + file_name
+        fs.download(hdfs_path=hdfs_path, local_path=path)
+        file = {'file': open(path, 'rb')}
+        url = 'http://175.27.155.91:9898'
+        data = {
+            'filepath': './test.png',
+            "savepath": "./test1.png",
+        }
+        response = requests.post(url, data=data, files=file)
+        img = response.content
+        byte_stream = io.BytesIO(img)  # 请求数据转化字节流
+        roiImg = Image.open(byte_stream)  # Image打开二进制流Byte字节流数据
+        imgByteArr = io.BytesIO()  # 创建一个空的Bytes对象
+        roiImg.save(imgByteArr, format='PNG')  # PNG就是图片格式
+        imgByteArr = imgByteArr.getvalue()  # 保存的二进制流
+        name = file_name.split(".")
+        file_named = 'de' + name[0] + '.' + 'png'
+        print(file_named)
+        # 创建图片
+        with open('/tmp/pycharm_project_2/File/' + file_named, "wb+") as f:
+            f.write(imgByteArr)
+        f.close()
+        # 获取本地文件路径 文件名 文件路径拼接
+        localpath = os.path.join('/tmp/pycharm_project_2/File/', file_named)
+        # 定义hdfs文件路径
+        hadoop_path = os.path.join(dir, file_named)
+        # 开始上传
+        fs.upload(hdfs_path=hadoop_path, local_path=localpath, cleanup=True, overwrite=True)
+        image_data = base64.b64encode(imgByteArr).decode()
+        ima = open(path, "rb")
+        ima = ima.read()
+        image = base64.b64encode(ima).decode()
+        os.remove(path)
+        os.remove(localpath)
+        image_data = 'data:image/png;base64,' + image_data
+        image = 'data:image/png;base64,' + image
+        return JsonResponse({'code': 200, 'errmsg': 'ok', 'data1':image_data, 'data2': image})
+
+
+
+
+
+
